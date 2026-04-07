@@ -1,0 +1,28 @@
+# Cyware CSAP OpenCTI Connector — local development config
+# Copy to config.yml and fill in values. Environment variables take precedence.
+
+opencti:
+  url: 'http://localhost:8080'
+  token: 'ChangeMe'
+
+connector:
+  id: 'ChangeMe'
+  type: 'EXTERNAL_IMPORT'
+  name: 'Cyware CSAP'
+  scope: 'cyware-csap'
+  log_level: 'info'
+  duration_period: 'PT1H'
+
+cyware:
+  base_url: 'https://your-instance.cyware.com/api/'  # Must end with /
+  access_id: 'ChangeMe'
+  access_secret: 'ChangeMe'
+  tlp: 'amber+strict'
+  scopes: 'alert,intel'
+  alert_start_timestamp: ''   # Unix timestamp; leave empty for 30 days ago
+  alert_category_ids: ''      # Comma-separated category IDs; leave empty for all
+  alert_tlp_filter: ''        # Comma-separated TLP values; leave empty for all
+  alert_page_size: 50
+  intel_page_size: 50
+  indicator_blacklist_score: 75
+  indicator_whitelist_score: 15

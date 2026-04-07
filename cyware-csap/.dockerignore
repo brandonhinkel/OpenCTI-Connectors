@@ -1,0 +1,10 @@
+docs/
+scripts/
+IMPLEMENTATION_PLAN.md
+*.md
+.git/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.egg-info/
+.env
