@@ -70,7 +70,11 @@ class BaseCywareClient:
                 continue
 
             if response.status_code == 200:
-                return response.json()
+                data = response.json()
+                self.helper.log_debug(
+                    f"[API] {endpoint} → {str(data)[:1000]}"
+                )
+                return data
 
             if response.status_code in _RETRYABLE_STATUS_CODES:
                 wait = _RETRY_BACKOFF_BASE ** attempt

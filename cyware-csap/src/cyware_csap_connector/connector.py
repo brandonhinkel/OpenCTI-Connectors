@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 import time
+import traceback
 from typing import TYPE_CHECKING, Any, cast
 
 import stix2
@@ -90,7 +91,8 @@ class CywareCSAP:
                     )
                 except Exception as exc:
                     self.helper.log_error(
-                        f"[Connector] Importer '{importer_name}' raised an error: {exc}"
+                        f"[Connector] Importer '{importer_name}' raised an error: {exc}\n"
+                        f"{traceback.format_exc()}"
                     )
                     try:
                         self.helper.api.work.to_processed(
@@ -109,7 +111,10 @@ class CywareCSAP:
             sys.exit(0)
 
         except Exception as exc:
-            self.helper.log_error(f"[Connector] Unexpected error during run: {exc}")
+            self.helper.log_error(
+                f"[Connector] Unexpected error during run: {exc}\n"
+                f"{traceback.format_exc()}"
+            )
 
     def run(self) -> None:
         """Start the connector's scheduling loop (blocks indefinitely)."""

@@ -88,6 +88,13 @@ class AlertImporter(BaseImporter):
                     self._error("Failed to fetch detail for alert {0}: {1}", short_id, exc)
                     continue
 
+                self._debug(
+                    "Alert {0} detail keys: {1}; indicators keys: {2}",
+                    short_id,
+                    list(detail.keys()),
+                    list((detail.get("indicators") or {}).keys()),
+                )
+
                 try:
                     bundle = AlertBundleBuilder(
                         alert=detail,
@@ -99,6 +106,10 @@ class AlertImporter(BaseImporter):
                         whitelist_score=self.config.cyware.indicator_whitelist_score,
                     ).build()
                     self._send_bundle(bundle)
+                    self._debug(
+                        "Alert {0} bundle sent: {1} STIX objects",
+                        short_id, len(bundle.objects),
+                    )
                     total_imported += 1
                 except Exception as exc:
                     self._error(

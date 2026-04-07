@@ -101,6 +101,15 @@ class IntelImporter(BaseImporter):
                     )
                     continue
 
+                self._debug(
+                    "Intel {0} detail keys: {1}; indicators type: {2}, keys: {3}",
+                    incident_id,
+                    list(detail.keys()),
+                    type(detail.get("indicators")).__name__,
+                    list((detail.get("indicators") or {}).keys())
+                    if isinstance(detail.get("indicators"), dict) else detail.get("indicators"),
+                )
+
                 try:
                     bundle = IntelBundleBuilder(
                         intel=detail,
@@ -112,6 +121,10 @@ class IntelImporter(BaseImporter):
                         whitelist_score=self.config.cyware.indicator_whitelist_score,
                     ).build()
                     self._send_bundle(bundle)
+                    self._debug(
+                        "Intel {0} bundle sent: {1} STIX objects",
+                        incident_id, len(bundle.objects),
+                    )
                     new_processed_ids.add(incident_id)
                     total_imported += 1
                 except Exception as exc:
