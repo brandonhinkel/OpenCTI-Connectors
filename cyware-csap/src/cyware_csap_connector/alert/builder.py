@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 from datetime import datetime, timezone
 from typing import Any
 
@@ -9,8 +10,10 @@ import stix2
 from pycti import Identity as PyCTIIdentity
 from pycti import Report as PyCTIReport
 
-from cyware_csap_services.utils.constants import get_tlp_marking, strip_html
+from cyware_csap_services.utils.constants import get_tlp_marking, html_to_markdown
 from cyware_csap_services.utils.observables import create_ioc_objects
+
+_PLACEHOLDER_NAME = "CYWARE EMPTY REPORT"
 
 
 class AlertBundleBuilder:
@@ -33,6 +36,7 @@ class AlertBundleBuilder:
         confidence: int,
         blacklist_score: int,
         whitelist_score: int,
+        pdf_bytes: bytes | None = None,
     ) -> None:
         self.alert = alert
         self.author = author
@@ -41,6 +45,7 @@ class AlertBundleBuilder:
         self.confidence = confidence
         self.blacklist_score = blacklist_score
         self.whitelist_score = whitelist_score
+        self.pdf_bytes = pdf_bytes
 
     # ------------------------------------------------------------------
     # Public
@@ -53,12 +58,6 @@ class AlertBundleBuilder:
 
         ioc_objects = self._build_ioc_objects(tlp, published_dt)
 
-        # Compute object_refs before building the Report.
-        # The author is NEVER included in object_refs — it is only set via
-        # created_by_ref so it does not appear as an entity in the report.
-        # When no IOCs are present, use a named placeholder Identity so the
-        # Report's required object_refs constraint is satisfied without
-        # surfacing the author as a report entity.
         if ioc_objects:
             object_refs = [str(o.id) for o in ioc_objects]
             extra_objects: list = []
@@ -75,16 +74,15 @@ class AlertBundleBuilder:
         )
 
     def _create_placeholder(self) -> stix2.Identity:
-        """Named placeholder Identity used when an alert has no IOC objects.
+        """Placeholder Identity used when an alert has no IOC objects.
 
-        Satisfies the STIX 2.1 requirement that Report.object_refs is non-empty
-        without putting the connector author into the report's entity list.
-        The deterministic ID means all empty-IOC reports share the same
+        Satisfies the STIX 2.1 requirement that Report.object_refs is non-empty.
+        The deterministic ID means all indicator-free reports share the same
         placeholder entity in OpenCTI.
         """
         return stix2.Identity(
-            id=PyCTIIdentity.generate_id("Cyware CSAP (no indicators)", "organization"),
-            name="Cyware CSAP (no indicators)",
+            id=PyCTIIdentity.generate_id(_PLACEHOLDER_NAME, "organization"),
+            name=_PLACEHOLDER_NAME,
             identity_class="organization",
         )
 
@@ -234,9 +232,23 @@ class AlertBundleBuilder:
         title = (
             self.alert.get("title") or self.alert.get("short_id") or "Untitled"
         ).strip()
-        description = strip_html(self.alert.get("content") or "") or None
+        description = html_to_markdown(self.alert.get("content") or "") or None
         labels = self._build_labels() or None
         external_refs = self._build_external_refs()
+
+        custom: dict = {
+            "x_opencti_report_status": 0,
+            "x_opencti_confidence_level": self.confidence,
+        }
+        if self.pdf_bytes:
+            custom["x_opencti_files"] = [
+                {
+                    "name": f"{title}.pdf",
+                    "data": base64.b64encode(self.pdf_bytes).decode("utf-8"),
+                    "mime_type": "application/pdf",
+                    "no_trigger_import": True,
+                }
+            ]
 
         return stix2.Report(
             id=PyCTIReport.generate_id(title, published_dt.isoformat()),
@@ -249,9 +261,6 @@ class AlertBundleBuilder:
             labels=labels,
             external_references=external_refs,
             object_refs=object_refs,
-            custom_properties={
-                "x_opencti_report_status": 0,
-                "x_opencti_confidence_level": self.confidence,
-            },
+            custom_properties=custom,
             allow_custom=True,
         )

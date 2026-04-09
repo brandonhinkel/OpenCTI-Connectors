@@ -42,7 +42,7 @@ class CywareCSAP:
         self.helper = helper
 
         tlp_marking = CONFIG_TLP_MAP.get(config.cyware.tlp, stix2.TLP_AMBER)
-        author = self._create_author()
+        author = self._create_author()  # must come after self.config is set
         scopes = set(config.cyware.scopes)
 
         importers: list[BaseImporter] = []
@@ -127,12 +127,12 @@ class CywareCSAP:
     # Helpers
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _create_author() -> stix2.Identity:
-        """Create the Cyware STIX Identity with a deterministic ID."""
+    def _create_author(self) -> stix2.Identity:
+        """Create the connector author Identity with a deterministic ID."""
+        name = self.config.cyware.author_name
         return stix2.Identity(
-            id=PyCTIIdentity.generate_id("Cyware", "organization"),
-            name="Cyware",
+            id=PyCTIIdentity.generate_id(name, "organization"),
+            name=name,
             identity_class="organization",
         )
 

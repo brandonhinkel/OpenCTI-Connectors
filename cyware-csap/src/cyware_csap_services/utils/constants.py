@@ -101,3 +101,18 @@ def strip_html(html_str: str | None) -> str:
         return stripper.get_text()
     except Exception:
         return html_str or ""
+
+
+def html_to_markdown(html_str: str | None) -> str:
+    """Convert an HTML string to Markdown for OpenCTI's Description field.
+
+    Falls back to plain-text stripping if markdownify is unavailable or fails.
+    Returns an empty string for None or empty input.
+    """
+    if not html_str:
+        return ""
+    try:
+        import markdownify  # type: ignore[import-untyped]
+        return markdownify.markdownify(html_str, heading_style="ATX").strip()
+    except Exception:
+        return strip_html(html_str)

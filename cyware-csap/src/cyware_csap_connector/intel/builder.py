@@ -9,7 +9,7 @@ import stix2
 from pycti import Identity as PyCTIIdentity
 from pycti import Report as PyCTIReport
 
-from cyware_csap_services.utils.constants import get_tlp_marking, strip_html
+from cyware_csap_services.utils.constants import get_tlp_marking, html_to_markdown
 from cyware_csap_services.utils.observables import create_ioc_objects
 
 
@@ -39,6 +39,8 @@ class IntelBundleBuilder:
         self.blacklist_score = blacklist_score
         self.whitelist_score = whitelist_score
 
+    _PLACEHOLDER_NAME = "CYWARE EMPTY REPORT"
+
     def build(self) -> stix2.Bundle:
         """Build and return the STIX bundle for this intel report."""
         tlp = self._resolve_tlp()
@@ -62,10 +64,10 @@ class IntelBundleBuilder:
         )
 
     def _create_placeholder(self) -> stix2.Identity:
-        """Named placeholder Identity for intel reports with no IOC objects."""
+        """Placeholder Identity used when an intel report has no IOC objects."""
         return stix2.Identity(
-            id=PyCTIIdentity.generate_id("Cyware CSAP (no indicators)", "organization"),
-            name="Cyware CSAP (no indicators)",
+            id=PyCTIIdentity.generate_id(self._PLACEHOLDER_NAME, "organization"),
+            name=self._PLACEHOLDER_NAME,
             identity_class="organization",
         )
 
@@ -144,7 +146,7 @@ class IntelBundleBuilder:
             self.intel.get("title")
             or str(self.intel.get("incident_id", "Intel Report"))
         ).strip()
-        description = strip_html(self.intel.get("description") or "") or None
+        description = html_to_markdown(self.intel.get("description") or "") or None
         labels = self._build_labels() or None
         external_refs = self._build_external_refs()
 

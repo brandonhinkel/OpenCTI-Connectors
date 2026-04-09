@@ -13,11 +13,13 @@ services:
       - CYWARE_BASE_URL=https://your-instance.cyware.com/api/  # Must end with /
       - CYWARE_ACCESS_ID=ChangeMe
       - CYWARE_ACCESS_SECRET=ChangeMe
+      - CYWARE_AUTHOR_NAME=Cyware
       - CYWARE_TLP=amber+strict
       - CYWARE_SCOPES=alert,intel
       - CYWARE_ALERT_START_TIMESTAMP=   # Unix timestamp. Leave empty for default (30 days ago). WARNING: 0 means ALL alerts.
       - CYWARE_ALERT_CATEGORY_IDS=      # Comma-separated Cyware category IDs to filter alerts
       - CYWARE_ALERT_TLP_FILTER=        # Comma-separated TLP values to filter (e.g. GREEN,AMBER)
+      - CYWARE_ALERT_EXCLUDE_CATEGORY_NAMES=  # Comma-separated category names to exclude (e.g. Cyber Vulnerability)
       - CYWARE_ALERT_PAGE_SIZE=50
       - CYWARE_INTEL_PAGE_SIZE=50
       - CYWARE_INDICATOR_BLACKLIST_SCORE=75

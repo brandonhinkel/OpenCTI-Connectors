@@ -74,9 +74,22 @@ class CywareConfig(BaseConfigModel):
         default=[],
         description="Comma-separated TLP values to filter alerts (e.g. GREEN,AMBER). Empty = all TLPs.",
     )
+    alert_exclude_category_names: ListFromString = Field(
+        default=[],
+        description=(
+            "Comma-separated category names to exclude (case-insensitive). "
+            "Example: Cyber Vulnerability,Spam"
+        ),
+    )
     alert_page_size: PositiveInt = Field(
         default=50,
         description="Number of alerts to fetch per page.",
+    )
+
+    # Author identity
+    author_name: str = Field(
+        default="Cyware",
+        description="Display name of the author Identity created in OpenCTI.",
     )
 
     # Intel ingestion

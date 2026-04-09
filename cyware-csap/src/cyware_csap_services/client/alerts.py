@@ -51,9 +51,8 @@ class AlertsAPI(BaseCywareClient):
         return self._get(_ALERT_DETAIL_ENDPOINT.format(short_id=short_id))
 
     def get_alert_pdf(self, alert_id: str) -> bytes | None:
-        """Download alert PDF attachment. Returns bytes or None if unavailable.
-
-        Phase 6 feature — placeholder implementation.
-        """
-        # TODO Phase 6: implement binary download and OpenCTI file attachment
-        return None
+        """Download the PDF export for an alert. Returns bytes or None on failure."""
+        try:
+            return self._get_bytes(_ALERT_PDF_ENDPOINT.format(alert_id=alert_id))
+        except Exception:
+            return None

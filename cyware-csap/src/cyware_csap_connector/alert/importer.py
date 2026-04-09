@@ -46,6 +46,9 @@ class AlertImporter(BaseImporter):
 
         category_ids = list(self.config.cyware.alert_category_ids) or None
         tlp_filter = list(self.config.cyware.alert_tlp_filter) or None
+        exclude_categories = {
+            n.lower() for n in self.config.cyware.alert_exclude_category_names
+        }
         page_size = self.config.cyware.alert_page_size
 
         latest_ts = start_ts
@@ -88,12 +91,29 @@ class AlertImporter(BaseImporter):
                     self._error("Failed to fetch detail for alert {0}: {1}", short_id, exc)
                     continue
 
+                if exclude_categories:
+                    cat_name = (
+                        (detail.get("card_category") or {}).get("category_name") or ""
+                    ).lower()
+                    if cat_name in exclude_categories:
+                        self._debug(
+                            "Alert {0}: skipping excluded category '{1}'",
+                            short_id, cat_name,
+                        )
+                        continue
+
                 self._debug(
                     "Alert {0} detail keys: {1}; indicators keys: {2}",
                     short_id,
                     list(detail.keys()),
                     list((detail.get("indicators") or {}).keys()),
                 )
+
+                pdf_bytes = self.alerts_api.get_alert_pdf(short_id)
+                if pdf_bytes:
+                    self._debug("Alert {0}: PDF fetched ({1} bytes)", short_id, len(pdf_bytes))
+                else:
+                    self._debug("Alert {0}: no PDF available", short_id)
 
                 try:
                     bundle = AlertBundleBuilder(
@@ -104,6 +124,7 @@ class AlertImporter(BaseImporter):
                         confidence=self._confidence_level(),
                         blacklist_score=self.config.cyware.indicator_blacklist_score,
                         whitelist_score=self.config.cyware.indicator_whitelist_score,
+                        pdf_bytes=pdf_bytes,
                     ).build()
                     self._send_bundle(bundle)
                     self._debug(
