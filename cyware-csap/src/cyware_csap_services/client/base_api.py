@@ -59,7 +59,7 @@ class BaseCywareClient:
                 response = self._session.get(
                     url,
                     timeout=60,
-                    headers={"Accept": "application/pdf"},
+                    headers={"Accept": "*/*"},
                 )
             except requests.RequestException as exc:
                 last_exc = exc
