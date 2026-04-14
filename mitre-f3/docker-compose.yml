@@ -1,0 +1,16 @@
+version: '3'
+services:
+  connector-mitre-f3:
+    build: .
+    image: connector-mitre-f3:latest
+    environment:
+      - OPENCTI_URL=http://localhost
+      - OPENCTI_TOKEN=ChangeMe
+      - CONNECTOR_ID=ChangeMe
+      - CONNECTOR_TYPE=EXTERNAL_IMPORT
+      - CONNECTOR_NAME=MITRE Fight Fraud Framework (F3)
+      - CONNECTOR_SCOPE=attack-pattern,relationship,x-mitre-tactic,x-mitre-matrix,x-mitre-collection
+      - CONNECTOR_LOG_LEVEL=error
+      # - F3_INTERVAL=7 # In days
+      # - F3_FILE_URL=https://raw.githubusercontent.com/center-for-threat-informed-defense/fight-fraud-framework/main/public/f3-stix.json
+    restart: always
