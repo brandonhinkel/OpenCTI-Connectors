@@ -1,0 +1,20 @@
+opencti:
+  url: 'http://localhost'
+  token: 'ChangeMe'
+
+connector:
+  type: 'INTERNAL_EXPORT_FILE'
+  id: 'ChangeMe'
+  name: 'ExportFraudCardsCsv'
+  scope: 'text/csv'
+  confidence_level: 100 # From 0 (Unknown) to 100 (Fully trusted)
+  log_level: 'info'
+
+export-fraud-cards-csv:
+  # Path to the SQLite BIN lookup database.
+  # Generate the DB from the source CSV with:
+  #   python3 scripts/build_bin_db.py /path/to/bin-list-data.csv /data/bin_lookup.db
+  # Then mount the file into the container:
+  #   docker run -v /local/path/bin_lookup.db:/data/bin_lookup.db ...
+  # If the file is absent, BIN enrichment columns will be left empty.
+  bin_db_path: '/data/bin_lookup.db'
