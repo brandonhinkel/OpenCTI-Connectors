@@ -18,3 +18,7 @@ export-fraud-cards-csv:
   #   docker run -v /local/path/bin_lookup.db:/data/bin_lookup.db ...
   # If the file is absent, BIN enrichment columns will be left empty.
   bin_db_path: '/data/bin_lookup.db'
+  # Set to true to append source_id and source_value columns to the export.
+  # source_value contains the full raw text of each observable (newlines stripped).
+  # Disabled by default to keep the output clean.
+  include_source: false

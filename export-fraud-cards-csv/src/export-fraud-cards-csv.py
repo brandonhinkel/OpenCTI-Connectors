@@ -11,7 +11,7 @@ from pycti import OpenCTIConnectorHelper, get_config_variable
 from bin_lookup import BinLookup
 from card_parser import parse_cards
 
-CSV_HEADERS = [
+_BASE_HEADERS = [
     "card_number",
     "expiration_month",
     "expiration_year",
@@ -27,9 +27,9 @@ CSV_HEADERS = [
     "bin_country_name",
     "bin_iso_code2",
     "bin_iso_code3",
-    "source_id",
-    "source_value",
 ]
+
+_SOURCE_HEADERS = ["source_id", "source_value"]
 
 # Default BIN DB path relative to this file (override via env / config)
 _DEFAULT_DB_PATH = os.path.join(
@@ -65,6 +65,14 @@ class ExportFraudCardsCsv:
                 {"path": bin_db_path},
             )
 
+        self.include_source = get_config_variable(
+            "EXPORT_FRAUD_CARDS_INCLUDE_SOURCE",
+            ["export-fraud-cards-csv", "include_source"],
+            config,
+            False,
+            False,
+        )
+
     # ── CSV construction ──────────────────────────────────────────────────────
 
     @staticmethod
@@ -76,7 +84,8 @@ class ExportFraudCardsCsv:
         """Parse card data from Text observables and return (csv_string, row_count)."""
         output = io.StringIO()
         writer = csv.writer(output, delimiter=",", quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(CSV_HEADERS)
+        headers = _BASE_HEADERS + (_SOURCE_HEADERS if self.include_source else [])
+        writer.writerow(headers)
 
         row_count = 0
         for entity in text_observables:
@@ -87,7 +96,7 @@ class ExportFraudCardsCsv:
             cards = parse_cards(raw_text)
             for card in cards:
                 bin_info = self.bin_lookup.lookup(card.card_number)
-                writer.writerow([
+                row = [
                     card.card_number,
                     card.expiration_month,
                     card.expiration_year,
@@ -103,9 +112,11 @@ class ExportFraudCardsCsv:
                     bin_info.get("country_name", ""),
                     bin_info.get("iso_code2", ""),
                     bin_info.get("iso_code3", ""),
-                    entity.get("id", ""),
-                    raw_text,
-                ])
+                ]
+                if self.include_source:
+                    clean_text = raw_text.replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
+                    row += [entity.get("id", ""), clean_text]
+                writer.writerow(row)
                 row_count += 1
 
         return output.getvalue(), row_count
@@ -143,6 +154,10 @@ class ExportFraudCardsCsv:
     # ── Message handler ───────────────────────────────────────────────────────
 
     def _process_message(self, data: dict) -> str:
+        # Force .csv extension — OpenCTI resolves the custom MIME scope to ".unknown"
+        stem, ext = os.path.splitext(data["file_name"])
+        if ext.lower() != ".csv":
+            data["file_name"] = stem + ".csv"
         file_name = data["file_name"]
         export_scope = data["export_scope"]   # single | selection | query
         export_type = data["export_type"]

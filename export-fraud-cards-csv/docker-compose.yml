@@ -3,17 +3,20 @@ services:
   connector-export-fraud-cards-csv:
     build: .
     environment:
+      - CONNECTOR_TYPE=INTERNAL_EXPORT_FILE
       - OPENCTI_URL=http://localhost
       - OPENCTI_TOKEN=ChangeMe
       - CONNECTOR_ID=ChangeMe
       - CONNECTOR_NAME=ExportFraudCardsCsv
-      - CONNECTOR_SCOPE=text/csv
+      - CONNECTOR_SCOPE=fraud/csv
       - CONNECTOR_CONFIDENCE_LEVEL=100
       - CONNECTOR_LOG_LEVEL=error
       # Path inside the container where the BIN lookup DB is mounted.
       # Generate the DB locally first:
       #   python3 scripts/build_bin_db.py /path/to/bin-list-data.csv bin_lookup.db
       - EXPORT_FRAUD_CARDS_BIN_DB_PATH=/data/bin_lookup.db
+      # Set to true to append source_id and source_value columns (newlines stripped)
+      - EXPORT_FRAUD_CARDS_INCLUDE_SOURCE=false
     volumes:
       # Mount the directory containing the generated bin_lookup.db
       - /local/path/to/data:/data
