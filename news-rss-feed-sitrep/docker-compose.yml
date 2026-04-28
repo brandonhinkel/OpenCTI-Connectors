@@ -1,0 +1,57 @@
+# Example docker-compose.yml for the RSS SITREP Connector.
+#
+# Usage (standalone, without the full opencti-docker stack):
+#   docker compose up --build
+#
+# When running inside the full opencti-docker stack, add the connector-rss
+# service to the parent docker-compose.yml and reference this config instead:
+#
+#   connector-rss:
+#     build: ./opencti-rss-connector
+#     environment:
+#       - OPENCTI_URL=http://opencti:8080
+#       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+#       - CONNECTOR_ID=${CONNECTOR_RSS_ID}
+#       - CONNECTOR_TYPE=EXTERNAL_IMPORT
+#       - CONNECTOR_NAME=RSS Threat Intelligence SITREP
+#       - CONNECTOR_SCOPE=application/json
+#       - CONNECTOR_AUTO=true
+#       - CONNECTOR_LOG_LEVEL=info
+#       - CONNECTOR_DURATION_PERIOD=PT2H
+#     volumes:
+#       - ./opencti-rss-connector/config.yml:/opt/opencti-connector-rss/config.yml:ro
+#       - rss_hf_cache:/root/.cache/huggingface
+#     restart: unless-stopped
+#     depends_on:
+#       opencti:
+#         condition: service_healthy
+
+services:
+  connector-rss:
+    build: .
+    environment:
+      # Required: override with real values or set in a .env file
+      - OPENCTI_URL=${OPENCTI_URL:-http://opencti:8080}
+      - OPENCTI_TOKEN=${OPENCTI_TOKEN:-ChangeMe}
+      - CONNECTOR_ID=${CONNECTOR_RSS_ID:-rss-v2-sitrep-00000000-0000-0000-0000-000000000000}
+      - CONNECTOR_TYPE=EXTERNAL_IMPORT
+      - CONNECTOR_NAME=RSS Threat Intelligence SITREP
+      - CONNECTOR_SCOPE=application/json
+      - CONNECTOR_AUTO=true
+      - CONNECTOR_LOG_LEVEL=info
+      - CONNECTOR_DURATION_PERIOD=PT2H
+    volumes:
+      # Mount config at runtime — edit config.yml to change feeds and pipeline settings
+      - ./config.yml:/opt/opencti-connector-rss/config.yml:ro
+      # Persistent Hugging Face model cache — prevents re-downloading models on restart
+      - rss_hf_cache:/root/.cache/huggingface
+    networks:
+      - opencti_default   # change to match your OpenCTI deployment's Docker network name
+    restart: unless-stopped
+
+volumes:
+  rss_hf_cache:
+
+networks:
+  opencti_default:        # change to match your OpenCTI deployment's Docker network name
+    external: true

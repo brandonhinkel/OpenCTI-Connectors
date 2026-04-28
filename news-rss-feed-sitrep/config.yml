@@ -1,0 +1,120 @@
+# OpenCTI RSS Threat Intelligence SITREP Connector — Configuration
+#
+# Mount this file into the container at /opt/opencti-connector-rss/config.yml
+# (or set CONFIG_PATH to a different path).
+#
+# Connection settings below are defaults.  Override with environment variables:
+#   OPENCTI_URL, OPENCTI_TOKEN, CONNECTOR_ID, CONNECTOR_NAME, etc.
+# See connector.py for the full env var list.
+
+# ── OpenCTI connection ────────────────────────────────────────────────────────
+opencti:
+  url: "http://opencti:8080"
+  token: "ChangeMe"
+
+# ── Connector identity ────────────────────────────────────────────────────────
+connector:
+  id: "rss-v2-sitrep-00000000-0000-0000-0000-000000000000"  # override with CONNECTOR_ID
+  type: "EXTERNAL_IMPORT"
+  name: "RSS Threat Intelligence SITREP"
+  scope: "application/json"
+  auto: true
+  log_level: "info"
+  duration_period: "PT2H"   # ISO 8601 — run every 2 hours
+
+# ── Pipeline & ingest settings ────────────────────────────────────────────────
+rss_connector:
+
+  # ── TLP and confidence ──────────────────────────────────────────────────────
+  tlp: "WHITE"
+  confidence: 50               # default Report confidence (news-sourced, unverified)
+  confidence_new_entities: 40  # lower confidence for entities not already in platform
+
+  # ── Recency & volume ────────────────────────────────────────────────────────
+  max_age_days: 5              # drop articles published more than N days ago
+  max_articles_per_feed: 30    # max entries read per feed per run
+
+  # ── Relevance filtering ──────────────────────────────────────────────────────
+  classifier_enabled: true
+  relevance_threshold: 0.55
+  relevance_skip_if_has_entities: true
+
+  # ── Full-text scraping ────────────────────────────────────────────────────────
+  scraping_enabled: true
+  scrape_timeout: 15
+
+  # ── NER ──────────────────────────────────────────────────────────────────────
+  gliner_enabled: true
+  ner_model: "urchade/gliner_medium-v2.1"
+
+  # ── Clustering ───────────────────────────────────────────────────────────────
+  cluster_min_similarity: 0.72               # no entity overlap
+  cluster_min_similarity_entity_match: 0.55  # entity overlap confirmed
+  cluster_require_entity_overlap: true
+  category_constraint_enabled: true
+  cluster_window_days: 2                     # max days between articles to be grouped
+
+  # ── SITREP classification ─────────────────────────────────────────────────────
+  sitrep_threshold: 0.40
+  sitrep_cyber_subcat_threshold: 0.45
+
+  # ── Summarisation ─────────────────────────────────────────────────────────────
+  summarization_enabled: false           # enable DistilBART for abstractive summaries (~600MB extra)
+  summary_max_sentences_extractive: 6
+  summary_max_length_tokens: 150
+
+  # ── Model names ───────────────────────────────────────────────────────────────
+  embedding_model: "all-MiniLM-L6-v2"
+  classifier_model: "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli"
+  summarization_model: "sshleifer/distilbart-cnn-12-6"
+
+  # ── Source attribution ────────────────────────────────────────────────────────
+  check_canonical_url: false
+  primary_sources:
+    - "krebsonsecurity.com"
+    - "talos-intelligence.com"
+    - "blog.talosintelligence.com"
+    - "unit42.paloaltonetworks.com"
+    - "msrc.microsoft.com"
+    - "msrc-blog.microsoft.com"
+    - "security.googleblog.com"
+    - "research.checkpoint.com"
+    - "ic3.gov"
+    - "cisa.gov"
+
+  # ── RSS feeds ─────────────────────────────────────────────────────────────────
+  # Each entry is a plain URL string or a dict with optional override keys:
+  #   name              display name for logging
+  #   max_age_days      per-feed override (research blogs publish less frequently)
+  #   require_link_contains   drop entries whose link doesn't contain this substring
+  #   exclude_title_keywords  list of substrings; drop if any match the title
+  feeds:
+    # IC3 advisories
+    - "https://www.ic3.gov/CSA/RSS"
+
+    # Research blogs — wider age window since they publish infrequently
+    - url: "https://unit42.paloaltonetworks.com/category/threat-research/feed/"
+      name: "Unit 42"
+      max_age_days: 14
+    - url: "https://security.googleblog.com/feeds/posts/default"
+      name: "Google Security Blog"
+      max_age_days: 14
+    - url: "https://blog.talosintelligence.com/rss/"
+      name: "Talos Intelligence"
+      max_age_days: 14
+    - url: "https://research.checkpoint.com/feed"
+      name: "Check Point Research"
+      max_age_days: 14
+
+    # Daily news feeds
+    - "https://therecord.media/feed"
+    - url: "https://www.bleepingcomputer.com/feed/"
+      name: "Bleeping Computer"
+    - "https://krebsonsecurity.com/feed/"
+    - "https://www.darkreading.com/rss.xml"
+    - "https://feeds.feedburner.com/TheHackersNews"
+    - "https://www.securityweek.com/feed/"
+    - "https://www.hackread.com/feed/"
+    - "https://www.scworld.com/feed/topic/latest"
+    - "https://cybersecuritynews.com/feed/"
+    - "https://www.microsoft.com/en-us/security/blog/feed/"
